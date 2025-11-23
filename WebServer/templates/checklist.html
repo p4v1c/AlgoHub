@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pentest Checklist - Security Scan Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- STYLES GLOBAUX --- */
+        :root {
+            --bg-body: #F5F7FA; --bg-navbar: #FFFFFF; --bg-card: #FFFFFF; --bg-hover: #F0F2F5; --bg-separator: #E1E4E8;
+            --text-primary: #1A1F36; --text-secondary: #697386; --text-muted: #A0AEC0;
+            --accent-color: #3B82F6; --accent-subtle: #EBF5FF;
+            --success: #10B981; --success-subtle: #D1FAE5;
+            --warning: #F59E0B; --warning-subtle: #FEF3C7;
+            --danger: #EF4444; --danger-subtle: #FEF2F2;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05); --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --radius-md: 12px; --radius-sm: 8px;
+        }
+        [data-theme="dark"] {
+            --bg-body: #0F111A; --bg-navbar: #1A1D2E; --bg-card: #1F2338; --bg-hover: #2A2F4A; --bg-separator: #2F354F;
+            --text-primary: #E2E8F0; --text-secondary: #A0AEC0; --text-muted: #64748B;
+            --accent-color: #00E5FF; --accent-subtle: rgba(0, 229, 255, 0.1);
+            --success: #76FF03; --success-subtle: rgba(118, 255, 3, 0.1);
+            --warning: #FFC400; --warning-subtle: rgba(255, 196, 0, 0.1);
+            --danger: #FF3D71; --danger-subtle: rgba(255, 61, 113, 0.1);
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.2); --shadow-md: 0 4px 20px rgba(0, 229, 255, 0.05);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-primary); transition: background-color 0.3s ease, color 0.3s ease; overflow-x: hidden; }
+
+        /* Navbar */
+        .navbar { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; background-color: var(--bg-navbar); box-shadow: var(--shadow-sm); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--bg-separator); }
+        .nav-left, .nav-right { display: flex; align-items: center; gap: 1rem; }
+        .brand-title { font-weight: 700; font-size: 1.2rem; margin-right: 2rem; display: flex; align-items: center; }
+        .brand-title span { color: var(--accent-color); }
+        .btn { padding: 0.6rem 1.2rem; border-radius: var(--radius-sm); font-weight: 600; text-decoration: none; transition: all 0.2s ease; font-size: 0.9rem; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .btn-outline { border: 2px solid var(--bg-separator); color: var(--text-primary); background: transparent; }
+        .btn-outline:hover { border-color: var(--accent-color); color: var(--accent-color); background-color: var(--accent-subtle); }
+        .theme-toggle-btn { background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.5rem; padding: 0.5rem; border-radius: 50%; transition: color 0.3s ease; }
+        .theme-toggle-btn:hover { color: var(--accent-color); background-color: var(--bg-hover); }
+        .icon-md { width: 24px; height: 24px; }
+
+        /* Layout Checklist */
+        .container { max-width: 1000px; margin: 2rem auto; padding: 0 2rem; padding-bottom: 5rem; }
+        
+        .header-section { margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; }
+        .page-title { font-size: 2rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+        
+        /* Progress Bar */
+        .progress-container { width: 100%; background-color: var(--bg-separator); border-radius: 10px; margin-bottom: 2rem; height: 10px; overflow: hidden; }
+        .progress-bar { height: 100%; background-color: var(--accent-color); width: 0%; transition: width 0.5s ease; }
+        .progress-text { text-align: right; font-size: 0.9rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 0.5rem; }
+
+        /* Categories */
+        .category-section { margin-bottom: 2rem; background-color: var(--bg-card); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--bg-separator); overflow: hidden; }
+        .category-header { 
+            padding: 1.2rem 1.5rem; 
+            background-color: var(--bg-hover); 
+            border-bottom: 1px solid var(--bg-separator); 
+            cursor: pointer; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            transition: background 0.2s;
+        }
+        .category-header:hover { background-color: var(--accent-subtle); }
+        .category-title { font-weight: 700; font-size: 1.1rem; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+        .category-icon { font-size: 1.2rem; }
+        
+        .category-content { padding: 0; display: block; }
+        
+        /* Checklist Items */
+        .checklist-item { 
+            display: flex; 
+            align-items: flex-start; 
+            padding: 1rem 1.5rem; 
+            border-bottom: 1px solid var(--bg-separator); 
+            transition: background 0.2s;
+        }
+        .checklist-item:last-child { border-bottom: none; }
+        .checklist-item:hover { background-color: var(--bg-body); }
+        
+        /* Custom Checkbox */
+        .item-checkbox { 
+            appearance: none; 
+            min-width: 20px; height: 20px; 
+            border: 2px solid var(--text-muted); 
+            border-radius: 4px; 
+            margin-right: 1rem; 
+            margin-top: 3px;
+            cursor: pointer; 
+            position: relative;
+            transition: all 0.2s;
+        }
+        .item-checkbox:checked { 
+            background-color: var(--success); 
+            border-color: var(--success); 
+        }
+        .item-checkbox:checked::after {
+            content: '✔'; 
+            color: white; 
+            position: absolute; 
+            font-size: 14px; 
+            top: -2px; left: 3px;
+        }
+
+        .item-content { flex-grow: 1; }
+        .item-text { font-size: 1rem; color: var(--text-primary); margin-bottom: 0.3rem; font-weight: 500; }
+        .item-desc { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; }
+        .code-snippet { 
+            font-family: 'Fira Code', monospace; 
+            background-color: var(--bg-body); 
+            padding: 0.2rem 0.4rem; 
+            border-radius: 4px; 
+            border: 1px solid var(--bg-separator);
+            font-size: 0.85rem;
+            color: var(--danger);
+            display: inline-block;
+            margin-top: 0.2rem;
+        }
+
+        .checklist-item.completed .item-text { text-decoration: line-through; color: var(--text-muted); }
+        .checklist-item.completed .item-desc { opacity: 0.6; }
+
+        .reset-btn { background-color: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 0.5rem 1rem; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+        .reset-btn:hover { background-color: var(--danger); color: white; }
+
+    </style>
+</head>
+<body data-theme="light">
+
+    <nav class="navbar">
+        <div class="nav-left">
+            <div class="brand-title">
+                <svg class="icon-md" style="margin-right: 10px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                <span>Sec</span>Ops View
+            </div>
+            <a href="/" class="btn btn-outline" style="gap: 0.3rem;">
+                <svg class="icon-md" style="width:18px; height:18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Retour Dashboard
+            </a>
+        </div>
+        <div class="nav-right">
+            <button id="theme-toggle" class="theme-toggle-btn">
+                <svg id="sun-icon" class="icon-md" style="display: none;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <svg id="moon-icon" class="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            </button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header-section">
+            <div class="page-title">✅ Checklist Pentest AD</div>
+            <button onclick="resetChecklist()" class="reset-btn">Réinitialiser la progression</button>
+        </div>
+
+        <div class="progress-text" id="progress-text">0% Complété</div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <div id="checklist-container"></div>
+    </div>
+
+<script>
+    // --- DONNÉES CHECKLIST ---
+    const checklistData = [
+        {
+            title: "I. Reconnaissance & Énumération (Black Box)",
+            icon: "🕵️",
+            items: [
+                { text: "1. Découverte Réseau & Services", desc: "<code>nmap</code>, <code>netdiscover</code>, <code>masscan</code>. Cibler ports clés: 53, 88, 445, 389, 636." },
+                { text: "2. Identifier Services AD", desc: "Confirmer présence LDAP, SMB, Kerberos sur les cibles." },
+                { text: "3. Énumération Anonyme", desc: "LDAP (<code>ldapsearch -x</code>), SMB (null session), FTP (anon)." },
+                { text: "4. Politique de Mots de Passe", desc: "Récupérer via RPC ou SMB null session." }
+            ]
+        },
+        {
+            title: "II. Relais NTLM, Coercition & MITM",
+            icon: "⚡",
+            items: [
+                { text: "LLMNR/NBT-NS Poisoning", desc: "<code>Responder -I eth0</code>." },
+                { text: "Vérifier SMB Signing", desc: "<code>nxc smb <IP> --gen-relay-list</code>." },
+                { text: "NTLM Relay Standard", desc: "Relayer vers SMB ou LDAP. <code>ntlmrelayx.py</code>." },
+                { text: "Bypass SMB Signing (Remove-MIC)", desc: "Exploiter CVE-2019-1040. <code>ntlmrelayx.py --remove-mic</code>." },
+                { text: "NTLM Reflection", desc: "Relayer vers soi-même (WebDAV, MS08-068)." },
+                { text: "Coercition (PetitPotam, PrinterBug)", desc: "Forcer auth machine vers relai." },
+                { text: "Exploitation IPv6 (mitm6)", desc: "Spoofing DNS IPv6." }
+            ]
+        },
+        {
+            title: "III. Attaques Kerberos & Comptes",
+            icon: "🔑",
+            items: [
+                { text: "Énumération Utilisateurs", desc: "<code>kerbrute userenum</code>." },
+                { text: "AS-REP Roasting", desc: "Users 'No Preauth'. <code>GetNPUsers.py</code>." },
+                { text: "Kerberoasting", desc: "Comptes de service (RC4). <code>GetUserSPNs.py -request</code>." },
+                { text: "AES Roasting", desc: "Kerberoasting variant (AES). <code>GetUserSPNs.py -request -aes</code>." },
+                { text: "Password Spraying", desc: "Tester 1 password sur tous les users." }
+            ]
+        },
+        {
+            title: "IV. Énumération & Exploitation (Grey Box / Authentifié)",
+            icon: "⚙️",
+            items: [
+                { text: "BloodHound", desc: "Cartographie complète." },
+                { text: "Vérifier LAPS", desc: "<code>nxc smb ... --laps</code>. Mots de passe admin local lisibles ?" },
+                { text: "Partages Réseau", desc: "Spidering SMB pour mots de passe/fichiers." },
+                { text: "GPP Passwords", desc: "Group Policy Preferences (SYSVOL)." },
+                { text: "AD CS (Certificats)", desc: "<code>certipy find -vulnerable</code>." }
+            ]
+        },
+        {
+            title: "V. Vulnérabilités & CVEs Critiques (Exhaustif)",
+            icon: "💣",
+            items: [
+                { text: "Zerologon (CVE-2020-1472)", desc: "Reset password DC." },
+                { text: "NoPac (CVE-2021-42278)", desc: "sAMAccountName spoofing." },
+                { text: "PrintNightmare", desc: "RCE via Spooler." },
+                { text: "PetitPotam (Unauth)", desc: "Coercition sans compte." },
+                { text: "Certifried (CVE-2022-26923)", desc: "Privesc AD CS." },
+                { text: "KrbRelayUp", desc: "Local Privilege Escalation via Kerberos Relay." },
+                { text: "MS17-010 (EternalBlue)", desc: "RCE SMBv1." },
+                { text: "BlueKeep (CVE-2019-0708)", desc: "RCE RDP." },
+                { text: "Exchange (ProxyLogon/Shell)", desc: "RCE sur Exchange." },
+                { text: "PrivExchange", desc: "Escalade de privilèges via Exchange." },
+                { text: "SigRed", desc: "RCE DNS." }
+            ]
+        },
+        {
+            title: "VI. Webapps & Accès Physique",
+            icon: "🌐",
+            items: [
+                { text: "Scan Vulns Web", desc: "GLPI, Centreon, Jenkins, Tomcat..." },
+                { text: "Serveurs SQL", desc: "xp_cmdshell." },
+                { text: "Accès Physique", desc: "Boot USB, Dump LSASS/SAM." }
+            ]
+        }
+    ];
+
+    // --- LOGIQUE ---
+    const container = document.getElementById('checklist-container');
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+
+    const loadState = () => {
+        const saved = localStorage.getItem('pentest_checklist_state');
+        return saved ? JSON.parse(saved) : {};
+    };
+
+    const saveState = (id, isChecked) => {
+        const state = loadState();
+        state[id] = isChecked;
+        localStorage.setItem('pentest_checklist_state', JSON.stringify(state));
+        updateProgress();
+    };
+
+    const updateProgress = () => {
+        const state = loadState();
+        const totalItems = document.querySelectorAll('.item-checkbox').length;
+        const checkedItems = Object.values(state).filter(val => val === true).length;
+        
+        const percent = totalItems === 0 ? 0 : Math.round((checkedItems / totalItems) * 100);
+        progressBar.style.width = percent + '%';
+        progressText.textContent = `${percent}% Complété (${checkedItems}/${totalItems})`;
+    };
+
+    window.resetChecklist = () => {
+        if(confirm("Voulez-vous vraiment réinitialiser toute la checklist ?")) {
+            localStorage.removeItem('pentest_checklist_state');
+            document.querySelectorAll('.item-checkbox').forEach(cb => {
+                cb.checked = false;
+                cb.closest('.checklist-item').classList.remove('completed');
+            });
+            updateProgress();
+        }
+    };
+
+    const renderChecklist = () => {
+        const state = loadState();
+        let globalIndex = 0;
+
+        checklistData.forEach((category, catIndex) => {
+            const catDiv = document.createElement('div');
+            catDiv.className = 'category-section';
+
+            catDiv.innerHTML = `
+                <div class="category-header" onclick="toggleCategory(${catIndex})">
+                    <div class="category-title"><span class="category-icon">${category.icon}</span> ${category.title}</div>
+                    <svg id="icon-${catIndex}" class="icon-md" style="transform: rotate(180deg); transition: transform 0.3s;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="category-content" id="cat-content-${catIndex}">
+                </div>
+            `;
+            
+            const contentDiv = catDiv.querySelector(`#cat-content-${catIndex}`);
+
+            category.items.forEach(item => {
+                const itemId = `item_${globalIndex}`;
+                const isChecked = state[itemId] === true;
+                
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `checklist-item ${isChecked ? 'completed' : ''}`;
+                itemDiv.innerHTML = `
+                    <input type="checkbox" class="item-checkbox" id="${itemId}" ${isChecked ? 'checked' : ''}>
+                    <div class="item-content">
+                        <div class="item-text"><label for="${itemId}">${item.text}</label></div>
+                        <div class="item-desc">${item.desc}</div>
+                    </div>
+                `;
+
+                const checkbox = itemDiv.querySelector('.item-checkbox');
+                checkbox.addEventListener('change', (e) => {
+                    saveState(itemId, e.target.checked);
+                    if(e.target.checked) {
+                        itemDiv.classList.add('completed');
+                    } else {
+                        itemDiv.classList.remove('completed');
+                    }
+                });
+
+                contentDiv.appendChild(itemDiv);
+                globalIndex++;
+            });
+
+            container.appendChild(catDiv);
+        });
+        updateProgress();
+    };
+
+    window.toggleCategory = (index) => {
+        const content = document.getElementById(`cat-content-${index}`);
+        const icon = document.getElementById(`icon-${index}`);
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            icon.style.transform = 'rotate(180deg)';
+        } else {
+            content.style.display = 'none';
+            icon.style.transform = 'rotate(0deg)';
+        }
+    };
+
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const sunIcon = document.getElementById('sun-icon');
+    const moonIcon = document.getElementById('moon-icon');
+    const body = document.body;
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    body.setAttribute('data-theme', currentTheme);
+    updateIcons(currentTheme);
+
+    themeToggleBtn.addEventListener('click', () => {
+        const newTheme = body.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+        body.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateIcons(newTheme);
+    });
+    function updateIcons(theme) {
+        sunIcon.style.display = theme === 'dark' ? 'block' : 'none';
+        moonIcon.style.display = theme === 'light' ? 'block' : 'none';
+    }
+
+    renderChecklist();
+
+</script>
+</body>
+</html>

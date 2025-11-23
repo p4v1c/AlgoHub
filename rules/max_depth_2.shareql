@@ -1,0 +1,2 @@
+# Interdire l'exploration au-delà de la profondeur 2
+DENY EXPLORATION IF DEPTH > 10

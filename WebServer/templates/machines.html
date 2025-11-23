@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machines & Services - Security Scan Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- STYLES CSS GLOBAUX --- */
+        :root {
+            --bg-body: #F5F7FA; --bg-navbar: #FFFFFF; --bg-card: #FFFFFF; --bg-hover: #F0F2F5; --bg-separator: #E1E4E8;
+            --text-primary: #1A1F36; --text-secondary: #697386; --text-muted: #A0AEC0;
+            --accent-color: #3B82F6; --accent-subtle: #EBF5FF;
+            --success: #10B981; --success-subtle: #D1FAE5;
+            --warning: #F59E0B; --warning-subtle: #FEF3C7;
+            --danger: #EF4444; --danger-subtle: #FEF2F2;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05); --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --radius-md: 12px; --radius-sm: 8px;
+            --glow-shadow: none;
+        }
+        [data-theme="dark"] {
+            --bg-body: #0F111A; --bg-navbar: #1A1D2E; --bg-card: #1F2338; --bg-hover: #2A2F4A; --bg-separator: #2F354F;
+            --text-primary: #E2E8F0; --text-secondary: #A0AEC0; --text-muted: #64748B;
+            --accent-color: #00E5FF; --accent-subtle: rgba(0, 229, 255, 0.1);
+            --success: #76FF03; --success-subtle: rgba(118, 255, 3, 0.1);
+            --warning: #FFC400; --warning-subtle: rgba(255, 196, 0, 0.1);
+            --danger: #FF3D71; --danger-subtle: rgba(255, 61, 113, 0.1);
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.2); --shadow-md: 0 4px 20px rgba(0, 229, 255, 0.05);
+            --glow-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-primary); transition: background-color 0.3s ease, color 0.3s ease; overflow-x: hidden; }
+
+        /* --- Navigation --- */
+        .navbar { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; background-color: var(--bg-navbar); box-shadow: var(--shadow-sm); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--bg-separator); }
+        .nav-left, .nav-right { display: flex; align-items: center; gap: 1rem; }
+        .brand-title { font-weight: 700; font-size: 1.2rem; margin-right: 2rem; display: flex; align-items: center; }
+        .brand-title span { color: var(--accent-color); }
+        .btn { padding: 0.6rem 1.2rem; border-radius: var(--radius-sm); font-weight: 600; text-decoration: none; transition: all 0.2s ease; font-size: 0.9rem; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .btn-outline { border: 2px solid var(--bg-separator); color: var(--text-primary); background: transparent; }
+        .btn-outline:hover { border-color: var(--accent-color); color: var(--accent-color); background-color: var(--accent-subtle); }
+        .theme-toggle-btn { background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.5rem; padding: 0.5rem; border-radius: 50%; transition: color 0.3s ease; }
+        .theme-toggle-btn:hover { color: var(--accent-color); background-color: var(--bg-hover); }
+        .icon-sm { width: 18px; height: 18px; } .icon-md { width: 24px; height: 24px; }
+
+        /* --- Page Layout --- */
+        .container { max-width: 1400px; margin: 2rem auto; padding: 0 2rem; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .page-title { font-size: 1.8rem; font-weight: 700; display: flex; align-items: center; gap: 0.75rem; }
+        .page-title svg { color: var(--accent-color); }
+        
+        /* Search */
+        .search-container { margin-bottom: 2rem; position: relative; }
+        .search-input { width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem; border-radius: var(--radius-md); border: 1px solid var(--bg-separator); background-color: var(--bg-card); color: var(--text-primary); font-family: inherit; font-size: 0.95rem; transition: border-color 0.2s; }
+        .search-input:focus { outline: none; border-color: var(--accent-color); }
+        .search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+
+        /* --- Machine Cards --- */
+        .subnet-section { margin-bottom: 3rem; }
+        .subnet-title { font-size: 1.4rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem; border-bottom: 2px solid var(--bg-separator); padding-bottom: 0.5rem; }
+        .subnet-badge { font-size: 0.8rem; background: var(--bg-hover); padding: 0.2rem 0.6rem; border-radius: 4px; color: var(--text-secondary); font-weight: normal; }
+
+        .machines-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 1.5rem; }
+
+        .machine-card { background-color: var(--bg-card); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--bg-separator); overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; }
+        .machine-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--accent-color); }
+        
+        .machine-header { padding: 1rem 1.5rem; background-color: var(--bg-hover); border-bottom: 1px solid var(--bg-separator); display: flex; justify-content: space-between; align-items: center; }
+        .machine-ip { font-weight: 700; font-size: 1.1rem; color: var(--accent-color); font-family: 'Fira Code', monospace; }
+        .machine-hostname { font-size: 0.9rem; color: var(--text-secondary); font-style: italic; }
+
+        .machine-body { padding: 0; }
+
+        /* Ports Table inside Card */
+        .ports-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .ports-table th { background-color: var(--bg-body); color: var(--text-secondary); font-weight: 600; text-align: left; padding: 0.5rem 1rem; border-bottom: 1px solid var(--bg-separator); }
+        .ports-table td { padding: 0.5rem 1rem; border-bottom: 1px solid var(--bg-separator); color: var(--text-primary); vertical-align: top; }
+        .ports-table tr:last-child td { border-bottom: none; }
+        
+        .port-number { font-family: 'Fira Code', monospace; font-weight: 600; }
+        .service-name { color: var(--text-primary); font-weight: 500; }
+        .product-info { color: var(--text-secondary); font-size: 0.8rem; }
+
+        .badge { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+        .badge-open { background-color: var(--success-subtle); color: var(--success); }
+
+        #loading-state, #error-state { text-align: center; padding: 3rem; font-size: 1.2rem; color: var(--text-secondary); }
+        #error-state { color: var(--danger); }
+        .empty-subnet { font-style: italic; color: var(--text-muted); padding: 1rem; }
+    </style>
+</head>
+<body data-theme="light">
+
+    <nav class="navbar">
+        <div class="nav-left">
+            <div class="brand-title">
+                <svg class="icon-md" style="margin-right: 10px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                <span>Sec</span>Ops View
+            </div>
+            <a href="/" class="btn btn-outline" style="gap: 0.3rem;">
+                <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Retour au Dashboard
+            </a>
+        </div>
+        <div class="nav-right">
+            <button id="theme-toggle" class="theme-toggle-btn">
+                <svg id="sun-icon" class="icon-md" style="display: none;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <svg id="moon-icon" class="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            </button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <div class="page-title">
+                <svg class="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path></svg>
+                Machines & Services (Nmap)
+            </div>
+            <div id="total-hosts" style="color: var(--text-secondary); font-weight: 600;"></div>
+        </div>
+
+        <div id="loading-state">Chargement des scans Nmap...</div>
+        <div id="error-state" style="display: none;"></div>
+
+        <div id="machines-content" style="display: none;">
+            <div class="search-container">
+                <svg class="search-icon icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <input type="text" id="machine-search" class="search-input" placeholder="Rechercher par IP, Hostname, Port (ex: 88) ou Service (ex: http)...">
+            </div>
+            
+            <div id="subnets-container">
+                <!-- Inject JS here -->
+            </div>
+        </div>
+    </div>
+
+<script>
+    // --- Theme Logic ---
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const sunIcon = document.getElementById('sun-icon');
+    const moonIcon = document.getElementById('moon-icon');
+    const body = document.body;
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    body.setAttribute('data-theme', currentTheme);
+    updateThemeIcons(currentTheme);
+    
+    themeToggleBtn.addEventListener('click', () => {
+        const newTheme = body.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+        body.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcons(newTheme);
+    });
+    function updateThemeIcons(theme) {
+        sunIcon.style.display = theme === 'dark' ? 'block' : 'none';
+        moonIcon.style.display = theme === 'light' ? 'block' : 'none';
+    }
+
+    // --- Data Store ---
+    let allSubnets = [];
+
+    // --- Rendering Logic ---
+    function renderMachines(subnets) {
+        const container = document.getElementById('subnets-container');
+        container.innerHTML = '';
+        let totalCount = 0;
+
+        subnets.forEach(subnet => {
+            const section = document.createElement('div');
+            section.className = 'subnet-section';
+
+            // Filter hosts if searching
+            // This simple filter logic handles subnet display only if hosts match
+            
+            const hostsHTML = subnet.hosts.map(host => {
+                totalCount++;
+                
+                // Build Ports Rows
+                let portsRows = '';
+                if (host.ports && host.ports.length > 0) {
+                    host.ports.forEach(p => {
+                        // Clean up banner or product info
+                        let info = p.product || '';
+                        if(p.version) info += ` ${p.version}`;
+                        if(p.extrainfo) info += ` (${p.extrainfo})`;
+                        if(!info && p.banner) info = p.banner.substring(0, 50) + '...';
+
+                        portsRows += `
+                            <tr>
+                                <td class="port-number">${p.port}/${p.protocol}</td>
+                                <td><div class="service-name">${p.service}</div><div class="product-info">${info}</div></td>
+                                <td><span class="badge badge-open">${p.state}</span></td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    portsRows = '<tr><td colspan="3" style="text-align:center; color:var(--text-muted); font-style:italic;">Aucun port ouvert détecté</td></tr>';
+                }
+
+                return `
+                    <div class="machine-card" data-ip="${host.ip}" data-hostname="${host.hostname || ''}" data-ports="${JSON.stringify(host.ports)}">
+                        <div class="machine-header">
+                            <div class="machine-ip">${host.ip}</div>
+                            <div class="machine-hostname">${host.hostname || 'N/A'}</div>
+                        </div>
+                        <div class="machine-body">
+                            <table class="ports-table">
+                                <thead><tr><th width="25%">Port</th><th>Service/Product</th><th width="15%">State</th></tr></thead>
+                                <tbody>${portsRows}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if(subnet.hosts.length === 0) {
+                section.innerHTML = `
+                    <div class="subnet-title">${subnet.title}</div>
+                    <div class="empty-subnet">Aucune machine trouvée dans ce subnet.</div>
+                `;
+            } else {
+                section.innerHTML = `
+                    <div class="subnet-title">${subnet.title} <span class="subnet-badge">${subnet.hosts.length} Hosts</span></div>
+                    <div class="machines-grid">${hostsHTML}</div>
+                `;
+            }
+            
+            container.appendChild(section);
+        });
+
+        document.getElementById('total-hosts').textContent = `${totalCount} Machines`;
+    }
+
+    // --- Search Logic ---
+    document.getElementById('machine-search').addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        
+        // We need to filter the visual elements directly or re-render. 
+        // Re-rendering is cleaner.
+        
+        const filteredSubnets = allSubnets.map(subnet => {
+            // Filter hosts inside subnet
+            const filteredHosts = subnet.hosts.filter(host => {
+                const ip = host.ip.toLowerCase();
+                const hostname = (host.hostname || '').toLowerCase();
+                // Search in ports
+                const portsMatch = host.ports ? host.ports.some(p => {
+                    return p.port.toString().includes(term) || 
+                           (p.service || '').toLowerCase().includes(term) ||
+                           (p.product || '').toLowerCase().includes(term);
+                }) : false;
+
+                return ip.includes(term) || hostname.includes(term) || portsMatch;
+            });
+
+            return {
+                ...subnet,
+                hosts: filteredHosts
+            };
+        }).filter(subnet => subnet.hosts.length > 0); // Only keep subnets with matches
+
+        renderMachines(filteredSubnets);
+    });
+
+    // --- Init ---
+    document.addEventListener('DOMContentLoaded', () => {
+        fetch('/api/data')
+            .then(res => { if (!res.ok) throw new Error(res.statusText); return res.json(); })
+            .then(data => {
+                document.getElementById('loading-state').style.display = 'none';
+                document.getElementById('machines-content').style.display = 'block';
+                
+                if (data.nmap_subnets) {
+                    allSubnets = data.nmap_subnets;
+                    renderMachines(allSubnets);
+                } else {
+                    document.getElementById('subnets-container').innerHTML = '<div class="empty-subnet">Aucune donnée Nmap trouvée.</div>';
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('loading-state').style.display = 'none';
+                const errDiv = document.getElementById('error-state');
+                errDiv.style.display = 'block';
+                errDiv.innerHTML = `Erreur: ${err.message}`;
+            });
+    });
+</script>
+</body>
+</html>

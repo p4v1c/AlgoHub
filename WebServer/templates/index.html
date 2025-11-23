@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Scan Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- STYLES CSS COMPLETS --- */
+        :root {
+            --bg-body: #F5F7FA; --bg-navbar: #FFFFFF; --bg-card: #FFFFFF; --bg-hover: #F0F2F5; --bg-separator: #E1E4E8;
+            --text-primary: #1A1F36; --text-secondary: #697386; --text-muted: #A0AEC0;
+            --accent-color: #3B82F6; --accent-subtle: #EBF5FF;
+            --success: #10B981; --success-subtle: #D1FAE5;
+            --warning: #F59E0B; --warning-subtle: #FEF3C7;
+            --danger: #EF4444; --danger-subtle: #FEF2F2;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05); --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --radius-md: 12px; --radius-sm: 8px;
+            --json-key: #CF222E; --json-string: #0A3069; --json-number: #0550AE; --json-boolean: #0550AE;
+            --glow-shadow: none;
+        }
+        [data-theme="dark"] {
+            --bg-body: #0F111A; --bg-navbar: #1A1D2E; --bg-card: #1F2338; --bg-hover: #2A2F4A; --bg-separator: #2F354F;
+            --text-primary: #E2E8F0; --text-secondary: #A0AEC0; --text-muted: #64748B;
+            --accent-color: #00E5FF; --accent-subtle: rgba(0, 229, 255, 0.1);
+            --success: #76FF03; --success-subtle: rgba(118, 255, 3, 0.1);
+            --warning: #FFC400; --warning-subtle: rgba(255, 196, 0, 0.1);
+            --danger: #FF3D71; --danger-subtle: rgba(255, 61, 113, 0.1);
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.2); --shadow-md: 0 4px 20px rgba(0, 229, 255, 0.05);
+            --json-key: #FF7B72; --json-string: #A5D6FF; --json-number: #79C0FF; --json-boolean: #79C0FF;
+            --glow-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-primary); transition: background-color 0.3s ease, color 0.3s ease; overflow-x: hidden; }
+        
+        .navbar { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; background-color: var(--bg-navbar); box-shadow: var(--shadow-sm); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--bg-separator); }
+        .nav-left, .nav-right { display: flex; align-items: center; gap: 1rem; }
+        .brand-title { font-weight: 700; font-size: 1.2rem; margin-right: 2rem; display: flex; align-items: center; }
+        .brand-title span { color: var(--accent-color); }
+        .btn { padding: 0.6rem 1.2rem; border-radius: var(--radius-sm); font-weight: 600; text-decoration: none; transition: all 0.2s ease; font-size: 0.9rem; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+        .btn-outline { border: 2px solid var(--bg-separator); color: var(--text-primary); background: transparent; }
+        .btn-outline:hover { border-color: var(--accent-color); color: var(--accent-color); background-color: var(--accent-subtle); }
+        .btn-primary { background-color: var(--accent-color); color: var(--bg-navbar); }
+        [data-theme="dark"] .btn-primary { color: #0F111A; box-shadow: var(--glow-shadow); }
+        .btn-primary:hover { opacity: 0.9; }
+        .theme-toggle-btn { background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.5rem; padding: 0.5rem; border-radius: 50%; transition: color 0.3s ease; }
+        .theme-toggle-btn:hover { color: var(--accent-color); background-color: var(--bg-hover); }
+
+        /* Layouts */
+        #ad-full-width-container { width: 100vw; max-width: 100%; padding: 2rem; box-sizing: border-box; }
+        .dashboard-container { max-width: 1600px; margin: 0 auto 2rem auto; padding: 0 2rem; } 
+        .section-header { margin: 2rem 0 1.5rem 0; font-size: 1.5rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 0.75rem; }
+        .section-header svg { color: var(--accent-color); }
+        #ad-full-width-container .section-header { margin-top: 0; }
+        
+        /* MODIFICATION CSS POUR MANSPIDER FULL WIDTH */
+        .grid-layout { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 2rem; margin-bottom: 3rem; }
+        .manspider-grid-override { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 2rem; 
+            width: 100%; 
+        }
+
+        .full-width-layout { display: flex; flex-direction: column; gap: 2rem; margin-bottom: 3rem; width: 100%; }
+        .split-columns { display: flex; gap: 1.5rem; width: 100%; }
+        .split-columns > * { flex: 1; min-width: 0; }
+        @media (max-width: 1024px) { .split-columns { flex-direction: column; } }
+
+        /* Cards */
+        .card { background-color: var(--bg-card); border-radius: var(--radius-md); box-shadow: var(--shadow-md); border: 1px solid var(--bg-separator); overflow: hidden; transition: transform 0.2s ease, box-shadow 0.2s ease; display: flex; flex-direction: column; width: 100%; }
+        .card:hover { box-shadow: var(--shadow-md), 0 0 15px var(--accent-subtle); }
+        [data-theme="dark"] .card:hover { border-color: var(--accent-color); }
+        .card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--bg-separator); display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-card); }
+        .card-title { font-weight: 600; font-size: 1.1rem; display: flex; align-items: center; gap: 0.75rem; }
+        .card-badge { font-size: 0.75rem; padding: 0.25rem 0.75rem; border-radius: 20px; background-color: var(--accent-subtle); color: var(--accent-color); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .card-body { padding: 0; flex-grow: 1; display: flex; flex-direction: column; }
+        .card-sub-header { padding: 0.75rem 1.5rem; font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); background: var(--bg-hover); border-bottom: 1px solid var(--bg-separator); border-top: 1px solid var(--bg-separator);}
+        .card-sub-header:first-child { border-top: none; }
+        .internal-sub-header { font-weight: 600; color: var(--text-secondary); margin: 1rem 0 0.5rem 0; padding-bottom: 0.25rem; border-bottom: 1px solid var(--bg-separator); font-size: 0.9rem; }
+        .internal-sub-header:first-child { margin-top: 0; }
+
+        /* Collapsible */
+        .collapsible-section { border-bottom: 1px solid var(--bg-separator); flex-grow: 1; display: flex; flex-direction: column; }
+        .collapsible-section:last-child { border-bottom: none; }
+        .collapsible-header { width: 100%; padding: 1rem 1.5rem; background: transparent; border: none; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-family: inherit; font-size: 0.95rem; font-weight: 500; color: var(--text-primary); transition: background-color 0.2s; text-align: left; }
+        .collapsible-header:hover { background-color: var(--bg-hover); }
+        .header-icon { transition: transform 0.3s ease; color: var(--text-muted); }
+        .collapsible-header.active .header-icon { transform: rotate(180deg); color: var(--accent-color); }
+        .collapsible-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; background-color: var(--bg-card); }
+        .collapsible-content-inner { padding: 1.5rem; border-top: 1px solid var(--bg-separator); overflow-x: auto; }
+        
+        /* Manspider Styles */
+        .manspider-block-danger .collapsible-header { color: var(--danger); background-color: var(--danger-subtle); border-radius: var(--radius-sm); border: 1px solid rgba(239, 68, 68, 0.2); margin-bottom: 1rem; padding: 0.8rem 1.2rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .manspider-block-danger .collapsible-header:hover { background-color: var(--danger-subtle); opacity: 0.9; transform: translateY(-1px); }
+        .manspider-block-danger .collapsible-content-inner { border: 1px solid var(--bg-separator); border-radius: var(--radius-sm); padding: 0; background-color: var(--bg-card); box-shadow: var(--shadow-sm); }
+        .manspider-block-danger { border-bottom: none; margin-bottom: 1.5rem; }
+        .split-columns .collapsible-section { height: auto; border-right: none; } 
+
+        .spn-toggle { color: var(--accent-color); cursor: pointer; font-size: 0.8rem; text-decoration: underline; margin-top: 0.25rem; display: inline-block; }
+        .spn-hidden { display: none; }
+        .spn-container.expanded .spn-hidden { display: block; }
+
+        /* Tables */
+        .clean-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: left; }
+        .clean-table th, .clean-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--bg-separator); vertical-align: top; }
+        .clean-table th { background-color: var(--bg-hover); font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+        .clean-table tr:last-child td { border-bottom: none; }
+        .clean-table tbody tr:hover { background-color: var(--bg-hover); cursor: pointer; }
+        .table-code { font-family: 'Fira Code', monospace; font-size: 0.85rem; color: var(--text-primary); overflow-wrap: break-word; word-break: break-all; max-width: 400px; }
+        
+        /* Badges */
+        .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .badge-danger { background-color: var(--danger-subtle); color: var(--danger); }
+        .badge-warning { background-color: var(--warning-subtle); color: var(--warning); }
+        .badge-success { background-color: var(--success-subtle); color: var(--success); }
+        .badge-info { background-color: var(--accent-subtle); color: var(--accent-color); }
+        .empty-state { padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic; }
+
+        /* JSON Tree & Modal */
+        .json-tree { font-family: 'Fira Code', 'Roboto Mono', monospace; font-size: 0.9rem; line-height: 1.6; overflow-x: auto; }
+        .json-tree ul { list-style: none; margin: 0; padding: 0; padding-left: 1.5rem; border-left: 1px solid var(--bg-separator); }
+        .json-tree > ul { border-left: none; padding-left: 0; }
+        .json-tree li { margin-bottom: 0.25rem; position: relative; }
+        .json-key { color: var(--json-key); } .json-string { color: var(--json-string); } .json-number { color: var(--json-number); } .json-boolean { color: var(--json-boolean); } .json-null { color: var(--text-muted); font-style: italic; }
+        .json-togglable { cursor: pointer; display: flex; align-items: center; }
+        .json-togglable::before { content: '▸'; display: inline-block; margin-right: 5px; color: var(--text-muted); transition: transform 0.2s; }
+        .json-togglable.open::before { transform: rotate(90deg); }
+        .json-togglable.open + ul { display: block; }
+        .json-togglable + ul { display: none; }
+        
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
+        .modal-overlay.active { display: flex; }
+        .modal-container { background-color: var(--bg-card); width: 90%; max-width: 900px; max-height: 90vh; border-radius: var(--radius-md); box-shadow: var(--shadow-md); display: flex; flex-direction: column; border: 1px solid var(--bg-separator); }
+        .modal-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--bg-separator); display: flex; justify-content: space-between; align-items: center; }
+        .modal-title { font-weight: 700; font-size: 1.2rem; }
+        .close-modal-btn { background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.5rem; line-height: 1; }
+        .modal-body { padding: 1.5rem; overflow-y: auto; flex-grow: 1; }
+
+        .icon-sm { width: 18px; height: 18px; } .icon-md { width: 24px; height: 24px; }
+        #loading-state { text-align: center; padding: 3rem; font-size: 1.2rem; color: var(--text-secondary); }
+    </style>
+</head>
+<body data-theme="light">
+
+    <nav class="navbar">
+        <div class="nav-left">
+            <div class="brand-title">
+                <svg class="icon-md" style="margin-right: 10px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                <span>Algo</span>Hub
+            </div>
+            <a href="/checklist" class="btn btn-outline" style="display:flex; align-items:center; gap:6px;">
+                <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                Checklist
+            </a>
+            <a href="http://localhost:1030" target="_blank" class="btn btn-outline">BloodHound</a>
+        </div>
+        <div class="nav-right">
+            <a href="/machines" class="btn btn-primary" style="margin-right: 1rem; display:flex; align-items:center; gap:6px;">
+                <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                Machines (Nmap)
+            </a>
+            
+            <a href="http://localhost:7171" target="_blank" class="btn btn-primary">Gowitness</a>
+            <button id="theme-toggle" class="theme-toggle-btn">
+                <svg id="sun-icon" class="icon-md" style="display: none;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <svg id="moon-icon" class="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            </button>
+        </div>
+    </nav>
+
+    <div id="loading-container" style="padding: 3rem; text-align: center; color: var(--text-secondary); font-size: 1.2rem;">
+        Loading scan data from server...
+    </div>
+
+    <div id="ad-full-width-container" style="display: none;"></div>
+    <div class="dashboard-container" id="main-content" style="display: none;"></div>
+
+    <div class="modal-overlay" id="details-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-title" id="modal-details-title">Détails</div>
+                <button class="close-modal-btn" id="close-details-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-json-content" class="json-tree"></div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    let realDataStore = null;
+    const modal = document.getElementById('details-modal');
+    const modalTitle = document.getElementById('modal-details-title');
+    const modalContent = document.getElementById('modal-json-content');
+
+    // --- UTILITIES ---
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const sunIcon = document.getElementById('sun-icon');
+    const moonIcon = document.getElementById('moon-icon');
+    const body = document.body;
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    body.setAttribute('data-theme', currentTheme);
+    updateThemeIcons(currentTheme);
+
+    themeToggleBtn.addEventListener('click', () => {
+        const newTheme = body.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+        body.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcons(newTheme);
+    });
+
+    function updateThemeIcons(theme) {
+        sunIcon.style.display = theme === 'dark' ? 'block' : 'none';
+        moonIcon.style.display = theme === 'light' ? 'block' : 'none';
+    }
+
+    function renderJsonTree(data) {
+        if (data === null) return '<span class="json-null">null</span>';
+        if (typeof data === 'undefined') return '<span class="json-null">undefined</span>';
+        if (typeof data !== 'object') {
+            const type = typeof data;
+            if (type === 'string') return `<span class="json-string">"${data.replace(/"/g, '&quot;')}"</span>`;
+            if (type === 'number') return `<span class="json-number">${data}</span>`;
+            if (type === 'boolean') return `<span class="json-boolean">${data}</span>`;
+            return `<span>${data}</span>`;
+        }
+        let html = '<ul>';
+        for (const key in data) {
+            const value = data[key];
+            const isObject = typeof value === 'object' && value !== null;
+            html += '<li>';
+            if (isObject && Object.keys(value).length > 0) {
+                 html += `<span class="json-togglable"><span class="json-key">"${key}"</span>: </span>${renderJsonTree(value)}`;
+            } else {
+                html += `<span class="json-key">"${key}"</span>: ${renderJsonTree(value)}`;
+            }
+            html += '</li>';
+        }
+        html += '</ul>';
+        return html;
+    }
+
+    function openDetailsModal(title, jsonData) {
+        modalTitle.textContent = title;
+        modalContent.innerHTML = renderJsonTree(jsonData);
+        modal.classList.add('active');
+        modalContent.querySelectorAll('.json-togglable').forEach(togglable => {
+            togglable.addEventListener('click', function(e) {
+                e.stopPropagation();
+                this.classList.toggle('open');
+            });
+        });
+    }
+
+    document.getElementById('close-details-modal').addEventListener('click', () => modal.classList.remove('active'));
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+
+    // --- COMPONENT BUILDERS ---
+    function createCardElement(title, badgeText, iconSvg) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.marginBottom = '2rem';
+        card.innerHTML = `
+            <div class="card-header">
+                <div class="card-title">${iconSvg ? iconSvg : ''}${title}</div>
+                ${badgeText ? `<span class="card-badge">${badgeText}</span>` : ''}
+            </div>
+            <div class="card-body"></div>
+        `;
+        return card;
+    }
+
+    function createCollapsibleSectionDOM(title, contentNode, isOpen = false, isDanger = false) {
+        const section = document.createElement('div');
+        section.className = 'collapsible-section';
+        if (isDanger) section.classList.add('manspider-block-danger');
+
+        const icon = isDanger
+            ? '<svg class="icon-sm" style="color: var(--danger); margin-right: 8px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>'
+            : '<svg class="icon-sm" style="color: var(--accent-color); margin-right: 8px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>';
+
+        const header = document.createElement('button');
+        header.className = `collapsible-header ${isOpen ? 'active' : ''}`;
+        header.innerHTML = `
+            <div style="display: flex; align-items: center;">${icon}<span>${title}</span></div>
+            <svg class="header-icon icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+        `;
+
+        const content = document.createElement('div');
+        content.className = 'collapsible-content';
+        content.style.maxHeight = isOpen ? '100%' : null; 
+
+        const contentInner = document.createElement('div');
+        contentInner.className = 'collapsible-content-inner';
+        if (contentNode instanceof Node) { contentInner.appendChild(contentNode); } else { contentInner.innerHTML = contentNode; }
+        content.appendChild(contentInner);
+        section.appendChild(header);
+        section.appendChild(content);
+
+        header.addEventListener('click', function() {
+            this.classList.toggle('active');
+            if (content.style.maxHeight) { content.style.maxHeight = null; } 
+            else { content.style.maxHeight = content.scrollHeight + "px"; }
+        });
+        return section;
+    }
+    
+    function getTrustTypeName(typeId) { const types = { 1: "External", 2: "Forest", 3: "Realm", 4: "Shortcut", 5: "Parent-Child", 6: "Tree-Root" }; return types[typeId] || `Unknown (${typeId})`; }
+    function getTrustDirectionName(dirId) { const dirs = { 1: "Inbound (One-way Incoming)", 2: "Outbound (One-way Outgoing)", 3: "Bidirectional (Two-way)" }; return dirs[dirId] || `Unknown (${dirId})`; }
+
+    function determineDelegationType(entry) {
+        const uac = entry.userAccountControl || "";
+        const hasAllowedToDelegateTo = entry['msDS-AllowedToDelegateTo'] && entry['msDS-AllowedToDelegateTo'].length > 0;
+        const hasRBCD = entry['msDS-AllowedToActOnBehalfOfOtherIdentity'];
+        if (hasRBCD) return { type: "Resource-Based Constrained (RBCD)", badge: "badge-danger", desc: "Très élevé si mal configuré" };
+        if (uac.includes("TRUSTED_FOR_DELEGATION") && !hasAllowedToDelegateTo) return { type: "Unconstrained", badge: "badge-danger", desc: "Très élevé (DC, vieux systèmes)" };
+        if (hasAllowedToDelegateTo && uac.includes("TRUSTED_TO_AUTH_FOR_DELEGATION")) return { type: "Constrained + Protocol Transition (S4U)", badge: "badge-warning", desc: "Élevé (Applis web)" };
+        if (hasAllowedToDelegateTo && !uac.includes("TRUSTED_TO_AUTH_FOR_DELEGATION")) return { type: "Constrained (KCD)", badge: "badge-info", desc: "Moyen (Délégation contrôlée)" };
+        return { type: "Unknown/Other", badge: "badge-info", desc: "" };
+    }
+
+    // --- TABLE RENDERERS ---
+    function createManspiderCredsTable(credsFiles) {
+        if (!credsFiles || credsFiles.length === 0) return document.createElement('div'); 
+        const table = document.createElement('table'); table.className = 'clean-table';
+        table.innerHTML = `<thead><tr><th>Chemin du fichier</th><th>Match (Grep)</th></tr></thead>`;
+        const tbody = document.createElement('tbody');
+        credsFiles.forEach((file) => {
+            if(file.matches) {
+                file.matches.forEach(match => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td class="table-code">${file.path}</td><td class="table-code" style="color:var(--danger);font-weight:500;">"${match.keyword}" (${match.count})</td>`;
+                    tr.style.cursor = 'pointer'; tr.addEventListener('click', () => openDetailsModal(`Détails: ${file.path}`, file));
+                    tbody.appendChild(tr);
+                });
+            }
+        });
+        table.appendChild(tbody); return table;
+    }
+    
+    function createManspiderFilesTable(interestingFiles) {
+        if (!interestingFiles || interestingFiles.length === 0) return document.createElement('div');
+        const table = document.createElement('table'); table.className = 'clean-table';
+        table.innerHTML = `<thead><tr><th>Chemin du fichier</th><th>Taille</th></tr></thead>`;
+        const tbody = document.createElement('tbody');
+        interestingFiles.forEach((file) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td class="table-code">${file.path}</td><td>${file.size}</td>`;
+            tr.style.cursor = 'pointer'; tr.addEventListener('click', () => openDetailsModal(`Détails: ${file.path}`, file));
+            tbody.appendChild(tr);
+        });
+        table.appendChild(tbody); return table;
+    }
+
+    function renderTrustsTable(trustsData) {
+        if (!trustsData || trustsData.length === 0) return '<div class="empty-state">Aucune relation de confiance.</div>';
+        let html = '<table class="clean-table"><thead><tr><th>Partenaire (CN)</th><th>Type</th><th>Direction</th><th>SID</th></tr></thead><tbody>';
+        trustsData.forEach(trust => { html += `<tr><td style="font-weight:600">${trust.cn}</td><td>${getTrustTypeName(trust.trustType)}</td><td>${getTrustDirectionName(trust.trustDirection)}</td><td class="table-code">${trust.securityIdentifier}</td></tr>`; });
+        return html + '</tbody></table>';
+    }
+
+    function renderDelegationsTable(delegationsData) {
+        if (!delegationsData || delegationsData.length === 0) return '<div class="empty-state">Aucune délégation configurée.</div>';
+        let html = '<table class="clean-table"><thead><tr><th>Compte</th><th>SPN</th><th>Type</th><th>Cibles</th></tr></thead><tbody>';
+        delegationsData.forEach(del => {
+            const delInfo = determineDelegationType(del);
+            const targets = del['msDS-AllowedToDelegateTo'] ? del['msDS-AllowedToDelegateTo'].join('<br>') : '-';
+            const allSpns = del.servicePrincipalName || [];
+            let spnHtml = allSpns.length > 3 
+                ? `<div class="spn-container"><div>${allSpns.slice(0,3).join('<br>')}</div><div class="spn-hidden">${allSpns.slice(3).join('<br>')}</div><a class="spn-toggle">Voir +</a></div>` 
+                : allSpns.join('<br>');
+            html += `<tr><td style="font-weight:600">${del.sAMAccountName}</td><td class="table-code">${spnHtml}</td><td><span class="badge ${delInfo.badge}">${delInfo.type}</span></td><td class="table-code">${targets}</td></tr>`;
+        });
+        return html + '</tbody></table>';
+    }
+
+    function renderPkiCertipySection(pkiData, certipyData) {
+        let html = '';
+        if (pkiData && pkiData.length > 0) {
+            html += '<div class="internal-sub-header">Informations LDAP PKI</div>';
+            pkiData.forEach(pki => { html += `<div style="background:var(--bg-hover);padding:0.75rem;margin-bottom:0.5rem;"><strong>CN:</strong> ${pki.cn}<br><strong>DNS:</strong> ${pki.dNSHostName}</div>`; });
+        }
+        if (certipyData && certipyData.data && certipyData.data["Certificate Authorities"]) {
+             html += `<div class="internal-sub-header">Analyse Certipy</div>`;
+             const cas = certipyData.data["Certificate Authorities"];
+             for (const key in cas) {
+                 const ca = cas[key];
+                 const isVuln = ca["[!] Vulnerabilities"] ? true : false;
+                 html += `<div style="border-top:1px solid var(--bg-separator);padding-top:0.5rem;">
+                    <div style="display:flex;justify-content:space-between;"><strong>${ca["CA Name"]}</strong>${isVuln?'<span class="badge badge-danger">Vulnérable</span>':'<span class="badge badge-success">OK</span>'}</div>`;
+                 if(isVuln) {
+                     html += `<div style="background:var(--danger-subtle);padding:0.5rem;margin:0.5rem 0;">`;
+                     for(const v in ca["[!] Vulnerabilities"]) html += `<strong style="color:var(--danger);">${v}:</strong> ${ca["[!] Vulnerabilities"][v]}<br>`;
+                     html += `</div>`;
+                 }
+                 html += `</div>`;
+             }
+        }
+        return html || '<div class="empty-state">Rien à signaler.</div>';
+    }
+
+
+    // --- MAIN RENDER LOGIC ---
+
+    function renderDashboard(data) {
+        const adContainer = document.getElementById('ad-full-width-container');
+        const mainContainer = document.getElementById('main-content');
+        const loadingContainer = document.getElementById('loading-container');
+
+        adContainer.innerHTML = '';
+        mainContainer.innerHTML = '';
+
+        const adHeader = document.createElement('div');
+        adHeader.className = 'section-header';
+        adHeader.innerHTML = `<svg class="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg> Active Directory Enumeration`;
+        adContainer.appendChild(adHeader);
+
+        if (!data.ad_enumeration || data.ad_enumeration.length === 0) {
+            adContainer.innerHTML += '<div class="card"><div class="card-body empty-state">Aucune donnée Active Directory trouvée. Lancez un scan Graybox.</div></div>';
+        } else {
+            data.ad_enumeration.forEach(dcData => {
+                const domainName = dcData.domain || "Domaine Inconnu";
+                const dcName = dcData.dc_name || "DC Inconnu";
+                
+                const trustsData = dcData.ldeep.find(f => f.file === 'trusts.json')?.data;
+                const delegationsData = dcData.ldeep.find(f => f.file === 'delegations.json')?.data;
+                const pkiData = dcData.ldeep.find(f => f.file === 'pkis.json')?.data;
+                const certipyData = dcData.certipy;
+                
+                let domainHtml = `
+                    <div class="card-sub-header">Utilisateurs</div>
+                    <div class="collapsible-content-inner" style="text-align: center;">
+                        <a href="/users" class="btn btn-primary">Voir les utilisateurs de ${dcName}</a>
+                    </div>
+                `;
+                domainHtml += `<div class="card-sub-header" style="margin-top: 1rem;">Relations de Confiance (Trusts)</div><div class="collapsible-content-inner">${renderTrustsTable(trustsData)}</div>`;
+                domainHtml += `<div class="card-sub-header" style="margin-top: 1rem;">PKI & Certificats (AD CS)</div><div class="collapsible-content-inner">${renderPkiCertipySection(pkiData, certipyData)}</div>`;
+                domainHtml += `<div class="card-sub-header" style="margin-top: 1rem;">Délégations Kerberos</div><div class="collapsible-content-inner">${renderDelegationsTable(delegationsData)}</div>`;
+
+                const card = createCardElement(
+                    `Domain: ${domainName} (Controlleur: ${dcName})`, 
+                    "Target DC Info", 
+                    '<svg class="icon-md" style="color: var(--accent-color); margin-right: 8px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>'
+                );
+                card.querySelector('.card-body').innerHTML = domainHtml;
+                adContainer.appendChild(card);
+            });
+        }
+
+        const otherHeader = document.createElement('div');
+        otherHeader.className = 'section-header';
+        otherHeader.innerHTML = `<svg class="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path></svg> File Analysis (Manspider)`;
+        adContainer.appendChild(otherHeader);
+
+        const otherGrid = document.createElement('div');
+        otherGrid.className = 'grid-layout manspider-grid-override';
+
+        if (!data.file_analysis || !data.file_analysis.manspider || data.file_analysis.manspider.length === 0) {
+             otherGrid.innerHTML = '<div class="card"><div class="card-body empty-state">Aucun résultat Manspider disponible.</div></div>';
+        } else {
+            data.file_analysis.manspider.forEach(subnetResult => {
+                 const ipMap = {};
+                 const getIpObj = (ip) => { if (!ipMap[ip]) ipMap[ip] = { creds: [], files: [] }; return ipMap[ip]; }
+                 
+                 // MODIFICATION: Protection contre null/undefined si JSON vide
+                 const credsList = subnetResult.creds || [];
+                 const filesList = subnetResult.files || [];
+
+                 credsList.forEach(host => { if (host.files?.length) getIpObj(host.ip).creds.push(...host.files); });
+                 filesList.forEach(host => { if (host.files?.length) getIpObj(host.ip).files.push(...host.files); });
+
+                 const hasCreds = credsList.length > 0;
+                 const hasFiles = filesList.length > 0;
+                 const badge = hasCreds ? "CRITIQUE" : (hasFiles ? "Info" : "Aucun résultat");
+                 
+                 const card = createCardElement(
+                     `Manspider - Subnet ${subnetResult.subnet}`, 
+                     badge, 
+                     '<svg class="icon-md" style="color: var(--text-primary); margin-right: 8px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0a2 2 0 002 2v2m-6-4a2 2 0 012 2v2m-6-4h2m-2 0a2 2 0 01-2-2v-2m2 6a2 2 0 00-2-2v-2m2 4v2m-6-2a2 2 0 01-2-2v-2m2 2a2 2 0 00-2 2v2"></path></svg>'
+                 );
+                 const cardBody = card.querySelector('.card-body');
+
+                 // MODIFICATION: Afficher quelque chose même si pas de résultats (si ipMap vide)
+                 if (Object.keys(ipMap).length === 0) {
+                     const emptyDiv = document.createElement('div');
+                     emptyDiv.className = 'empty-state';
+                     emptyDiv.innerHTML = "Scan effectué, mais aucun credential ni fichier intéressant trouvé.";
+                     cardBody.appendChild(emptyDiv);
+                 } else {
+                     for (const [ip, ipData] of Object.entries(ipMap)) {
+                         const splitDiv = document.createElement('div');
+                         splitDiv.className = 'split-columns';
+                         if(ipData.creds.length > 0) {
+                             const credsSection = createCollapsibleSectionDOM("Potentially Interesting Credentials", createManspiderCredsTable(ipData.creds), true, true);
+                             splitDiv.appendChild(credsSection);
+                         }
+                         if(ipData.files.length > 0) {
+                             const filesSection = createCollapsibleSectionDOM("Potentially Interesting Files", createManspiderFilesTable(ipData.files), true, true);
+                             splitDiv.appendChild(filesSection);
+                         }
+                         const ipSection = createCollapsibleSectionDOM(`Host: ${ip}`, splitDiv, false, false);
+                         cardBody.appendChild(ipSection);
+                     }
+                 }
+                 otherGrid.appendChild(card);
+            });
+        }
+        adContainer.appendChild(otherGrid);
+
+        mainContainer.style.display = 'none';
+        document.querySelectorAll('.spn-toggle').forEach(toggle => {
+            toggle.addEventListener('click', function() {
+                const container = this.closest('.spn-container');
+                container.classList.toggle('expanded');
+                this.textContent = container.classList.contains('expanded') ? "Voir moins" : "Voir plus...";
+            });
+        });
+
+        loadingContainer.style.display = 'none';
+        adContainer.style.display = 'block';
+    }
+
+    // --- INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', () => {
+        fetch('/api/data')
+            .then(response => { if (!response.ok) throw new Error(response.statusText); return response.json(); })
+            .then(data => {
+                console.log("Data fetched:", data);
+                realDataStore = data;
+                renderDashboard(realDataStore);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('loading-container').innerHTML = `<div style="color: var(--danger);">Error loading data: ${error.message}<br>Ensure server.py is running.</div>`;
+            });
+    });
+</script>
+</body>
+</html>
